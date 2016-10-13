@@ -1,0 +1,33 @@
+from hashpumpy import hashpump
+import requests
+
+def query(a,data):
+    payload = {'deprecated':a,'data':data}
+    s = requests.get("http://cns.ctf.tw/sign", params=payload)
+    return s
+
+def vequery(sig,data):
+    payload = {'sig':sig, 'data':data}
+    v = requests.get("http://cns.ctf.tw/verify", params=payload)
+    return v
+
+digest  =  query('','\x36'*64 +'3')
+print digest.url
+print digest.text.strip()
+
+result = hashpump(digest.text.strip(), '3', 'cns', 64)
+print
+print result
+print
+
+r2 = query('','\x5c'*64+result[0].decode('hex'))
+print r2.url
+print r2.text.strip()
+print
+
+sig = r2.text.strip()
+r3 = vequery( sig , result[1])
+print r3.url
+print
+print r3.text.strip()
+print
