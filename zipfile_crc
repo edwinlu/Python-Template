@@ -1,0 +1,54 @@
+import itertools
+import zipfile
+
+POLY = 0xedb88320 # CRC-32-IEEE 802.3
+checklist = [0x84A02E26,0xA359AFC1,0x5D1E3567,0xAD02F20F,0x551D976D]
+chars = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s',
+'t','u','v','w','x','y','z',' ','A','B','C','D','E','F','G','H','I','J','K','L','M',
+'N','O','P','Q','R','S','T','U','V','W','X','Y','Z','1','2','3','4','5','6','7','8',
+'9','0','!','@','#','$','%','^','&','*','(',')','-','+','=','_','?','<','>',',','.',
+':',';','{','}','[',']','|','~','/','\\']
+result = ['','','','','','']
+
+def build_crc_tables():
+    for i in range(256):
+        fwd = i
+        rev = i << 24
+        for j in range(8, 0, -1):
+            # build normal table
+            if (fwd & 1) == 1:
+                fwd = (fwd >> 1) ^ POLY
+            else:
+                fwd >>= 1
+            crc32_table[i] = fwd & 0xffffffff
+            # build reverse table =)
+            if rev & 0x80000000 == 0x80000000:
+                rev = ((rev ^ POLY) << 1) | 1
+            else:
+                rev <<= 1
+            rev &= 0xffffffff
+            crc32_reverse[i] = rev
+
+crc32_table, crc32_reverse = [0]*256, [0]*256
+build_crc_tables()
+
+def crc32(s): # same crc32 as in (binascii.crc32)&0xffffffff
+   crc = 0xffffffff
+   for c in s:
+       crc = (crc >> 8) ^ crc32_table[(crc ^ ord(c)) & 0xff]
+   return crc^0xffffffff
+
+print 'Retrieve Encrypted prob1-2.zip message'
+for i in itertools.product(chars,repeat=4):
+    if crc32(i) in checklist:
+        print ''.join(i)
+        pos =  checklist.index(crc32(i))
+        result[pos] = ''.join(i)
+
+for j in itertools.product(chars,repeat=2):
+    if crc32(j) == 0xE3F20A9D:
+        print ''.join(j)
+        result[5] = ''.join(j)
+
+
+print ''.join(result)
