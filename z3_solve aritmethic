@@ -1,0 +1,47 @@
+from z3 import*
+import socket
+
+sc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+sc.connect(('cns.ctf.tw', 7006))
+out = open('sn3-2.txt','w')    
+s0, s1, s2, s3, s4, s5 , s6  = BitVecs('s0 s1 s2 s3 s4 s5 s6', 64)
+solver = Solver()
+
+solver.add(s0 * s1 * s2  == 11432338203557685825)
+solver.add(s0 * s1 * s5  == 7009074961153156160)
+solver.add(s0 * s1 * s6  == 3224226047463458439)
+solver.add(s0 * s2 * s4  == 1340861934553908998)
+solver.add(s0 * s2 * s5  == 8699261672194141120)
+solver.add(s0 * s3 * s5  == 5232552718082304512)
+solver.add(s1 * s2 * s5  == 8941928873267534656)
+solver.add(s1 * s3 * s6  == 13842750632996104008)
+solver.add(s1 * s4 * s6  == 7300311676521932606)
+solver.add(s2 * s3 * s4  == 8773692266198055632)
+solver.add(s2 * s3 * s5  == 5795003210910433792)
+solver.add(s2 * s5 * s6  == 1688782921040576832)
+solver.add(s3 * s5 * s6  == 5805833754537692672)
+solver.add(s4 * s5 * s6  == 13761016490562631808)
+
+for i in range(0,10):
+
+    print("solving...")
+    print(solver.check())
+    print sc.recv(4096)    
+    c = solver.model()
+    message = '%s-%s-%s-%s-%s-%s-%s\n'%(c[s0],c[s1],c[s2],c[s3],c[s4],c[s5],c[s6])
+    convert = message.split('-')
+    print message
+    newrule = int(convert[0])
+    solver.add(s0 != newrule)
+    for i in range(0,7):
+        convert[i] = hex(int(convert[i]))
+
+    newmessage = '%s-%s-%s-%s-%s-%s-%s\n'%(convert[0],convert[1],convert[2],convert[3],convert[4],convert[5],convert[6])
+    newmessage = newmessage.replace("0x","")
+    newmessage = newmessage.replace("L","")
+    out.write(newmessage)
+    print newmessage
+    sc.send(newmessage)
+
+print sc.recv(4096)
+out.close()
